@@ -242,6 +242,7 @@ func (res *Restorer) RestoreTo(ctx context.Context, dst string) error {
 
 			// JH compare existing file
 			// TODO: node type changed?
+			// TODO: warn for newer files?
 			stat, err := os.Lstat(target)
 			if err == nil && stat.Size() == int64(node.Size) && stat.Mode() == node.Mode && stat.ModTime() == node.ModTime {
 				// ignore
