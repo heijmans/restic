@@ -2,6 +2,7 @@ package restorer
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -239,9 +240,19 @@ func (res *Restorer) RestoreTo(ctx context.Context, dst string) error {
 				idx.Add(node.Inode, node.DeviceID, location)
 			}
 
-			filerestorer.addFile(location, node.Content)
+			// JH compare existing file
+			// TODO: node type changed?
+			stat, err := os.Lstat(target)
+			if err == nil && stat.Size() == int64(node.Size) && stat.Mode() == node.Mode && stat.ModTime() == node.ModTime {
+				// ignore
+				return nil
+			}
+			fmt.Printf("update: %v\n", target)
 
+			filerestorer.addFile(location, node.Content)
 			return nil
+
+			// TODO: remove files that are not in backup
 		},
 		leaveDir: noop,
 	})
@@ -258,7 +269,27 @@ func (res *Restorer) RestoreTo(ctx context.Context, dst string) error {
 	return res.traverseTree(ctx, dst, string(filepath.Separator), *res.sn.Tree, treeVisitor{
 		enterDir: noop,
 		visitNode: func(node *restic.Node, target, location string) error {
+			// JH compare
+			// TODO: node type changed?
+			stat, err := os.Lstat(target)
+			if err == nil && stat.Size() == int64(node.Size) && stat.Mode() == node.Mode && stat.ModTime() == node.ModTime {
+				// ignore
+				return nil
+			}
+
 			if node.Type != "file" {
+				// JH compare
+				if node.Type == "symlink" && err == nil && stat.Mode() & os.ModeSymlink != 0 {
+					link, err := os.Readlink(target)
+					if err == nil && link == node.LinkTarget {
+						// JH ignore symlink, target matches so size should match
+						// modTime doesn't match, but modTime for symlinks is ignored in restoreSymlinkTimestamps (darwin)
+						// TODO check on linux?
+						return nil
+					}
+				}
+
+				fmt.Printf("update: %v %v\n", node.Type, target)
 				return res.restoreNodeTo(ctx, node, target, location)
 			}
 
