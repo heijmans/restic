@@ -49,7 +49,7 @@ var Params *crypto.Params
 
 var (
 	// KDFTimeout specifies the maximum runtime for the KDF.
-	KDFTimeout = 100 * time.Millisecond
+	KDFTimeout = 500 * time.Millisecond
 
 	// KDFMemory limits the memory the KDF is allowed to use.
 	KDFMemory = 60
@@ -202,13 +202,7 @@ func LoadKey(ctx context.Context, s *Repository, name string) (k *Key, err error
 func AddKey(ctx context.Context, s *Repository, password string, template *crypto.Key) (*Key, error) {
 	// make sure we have valid KDF parameters
 	if Params == nil {
-		p, err := crypto.Calibrate(KDFTimeout, KDFMemory)
-		if err != nil {
-			return nil, errors.Wrap(err, "Calibrate")
-		}
-
-		Params = &p
-		debug.Log("calibrated KDF parameters are %v", p)
+		Params = &crypto.Params{32768, 8, 1}
 	}
 
 	// fill meta data about key
