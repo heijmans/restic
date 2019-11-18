@@ -49,7 +49,7 @@ var Params *crypto.Params
 
 var (
 	// KDFTimeout specifies the maximum runtime for the KDF.
-	KDFTimeout = 500 * time.Millisecond
+	KDFTimeout = 100 * time.Millisecond
 
 	// KDFMemory limits the memory the KDF is allowed to use.
 	KDFMemory = 60
