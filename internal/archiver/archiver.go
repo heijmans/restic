@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/restic/restic/internal/debug"
 	"github.com/restic/restic/internal/errors"
 	"github.com/restic/restic/internal/fs"
 	"github.com/restic/restic/internal/restic"
-	tomb "gopkg.in/tomb.v2"
+	"gopkg.in/tomb.v2"
 )
 
 // SelectByNameFunc returns true for all items that should be included (files and
@@ -80,6 +82,7 @@ type Archiver struct {
 	// default.
 	WithAtime   bool
 	IgnoreInode bool
+	Root        string
 }
 
 // Options is used to configure the archiver.
@@ -183,6 +186,9 @@ func (arch *Archiver) saveTree(ctx context.Context, t *restic.Tree) (restic.ID, 
 
 // nodeFromFileInfo returns the restic node from a os.FileInfo.
 func (arch *Archiver) nodeFromFileInfo(filename string, fi os.FileInfo) (*restic.Node, error) {
+	if (!strings.HasPrefix(filename, arch.Root)) {
+		filename = filepath.Join(arch.Root, filename)
+	}
 	node, err := restic.NodeFromFileInfo(filename, fi)
 	if !arch.WithAtime {
 		node.AccessTime = node.ModTime

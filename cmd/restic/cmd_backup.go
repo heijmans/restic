@@ -87,6 +87,7 @@ type BackupOptions struct {
 	TimeStamp           string
 	WithAtime           bool
 	IgnoreInode         bool
+	Root                string
 }
 
 var backupOptions BackupOptions
@@ -115,13 +116,14 @@ func init() {
 	f.StringVar(&backupOptions.TimeStamp, "time", "", "time of the backup (ex. '2012-11-01 22:08:41') (default: now)")
 	f.BoolVar(&backupOptions.WithAtime, "with-atime", false, "store the atime for all files and directories")
 	f.BoolVar(&backupOptions.IgnoreInode, "ignore-inode", false, "ignore inode number changes when checking for modified files")
+	f.StringVar(&backupOptions.Root, "root", "", "start from local source root directory")
 }
 
 // filterExisting returns a slice of all existing items, or an error if no
 // items exist at all.
-func filterExisting(items []string) (result []string, err error) {
+func filterExisting(items []string, root string) (result []string, err error) {
 	for _, item := range items {
-		_, err := fs.Lstat(item)
+		_, err := fs.Lstat(filepath.Join(root, item))
 		if err != nil && os.IsNotExist(errors.Cause(err)) {
 			Warnf("%v does not exist, skipping\n", item)
 			continue
@@ -203,6 +205,8 @@ func (opts BackupOptions) Check(gopts GlobalOptions, args []string) error {
 			return errors.Fatal("--stdin was specified and files/dirs were listed as arguments")
 		}
 	}
+
+	// TOOD: --root can only be used with a single, non-wildcard target
 
 	return nil
 }
@@ -351,7 +355,7 @@ func collectTargets(opts BackupOptions, args []string) (targets []string, err er
 	}
 
 	targets = args
-	targets, err = filterExisting(targets)
+	targets, err = filterExisting(targets, opts.Root)
 	if err != nil {
 		return nil, err
 	}
@@ -532,6 +536,8 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, term *termstatus.Termina
 			ReadCloser: os.Stdin,
 		}
 		targets = []string{filename}
+	} else if opts.Root != "" {
+		targetFS = fs.Root{opts.Root}
 	}
 
 	sc := archiver.NewScanner(targetFS)
@@ -554,6 +560,7 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, term *termstatus.Termina
 	arch.StartFile = p.StartFile
 	arch.CompleteBlob = p.CompleteBlob
 	arch.IgnoreInode = opts.IgnoreInode
+	arch.Root = opts.Root
 
 	if parentSnapshotID == nil {
 		parentSnapshotID = &restic.ID{}
