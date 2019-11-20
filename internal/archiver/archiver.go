@@ -186,6 +186,8 @@ func (arch *Archiver) saveTree(ctx context.Context, t *restic.Tree) (restic.ID, 
 
 // nodeFromFileInfo returns the restic node from a os.FileInfo.
 func (arch *Archiver) nodeFromFileInfo(filename string, fi os.FileInfo) (*restic.Node, error) {
+	// TODO: bug if a file inside the root has same relative path as the root itself
+	// better: make sure we always get a rel path or we always get an abs path, should fix bug
 	if (!strings.HasPrefix(filename, arch.Root)) {
 		filename = filepath.Join(arch.Root, filename)
 	}
