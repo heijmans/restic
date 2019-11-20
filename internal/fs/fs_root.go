@@ -21,6 +21,7 @@ func (fs Root) fullPath(path string) string {
 // on Windows. Given "\\host\share\foo" it returns "\\host\share". On other
 // platforms it returns "".
 func (fs Root) VolumeName(path string) string {
+	// TODO: probably doesn't work on Windows. test or ignore.
 	return filepath.VolumeName(path)
 }
 
