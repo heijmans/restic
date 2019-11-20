@@ -816,6 +816,16 @@ func (arch *Archiver) Snapshot(ctx context.Context, targets []string, opts Snaps
 		return nil, restic.ID{}, err
 	}
 
+	if !opts.ParentSnapshot.IsNull() {
+		psn, err := restic.LoadSnapshot(ctx, arch.Repo, opts.ParentSnapshot)
+		if err != nil {
+			return nil, restic.ID{}, err
+		}
+		if rootTreeID.Equal(*psn.Tree) {
+			return psn, opts.ParentSnapshot, nil
+		}
+	}
+
 	err = arch.Repo.SaveIndex(ctx)
 	if err != nil {
 		return nil, restic.ID{}, err
