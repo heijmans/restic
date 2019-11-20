@@ -58,7 +58,7 @@ func splitPath(p string) []string {
 		return []string{f}
 	}
 	if d == "/" {
-		return []string{d}
+		return []string{f}
 	}
 	s := splitPath(path.Clean(d))
 	return append(s, f)
