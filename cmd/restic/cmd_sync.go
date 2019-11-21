@@ -54,13 +54,7 @@ type ResticConfig struct {
 
 func readConfig(dir string) (*ResticConfig, error) {
 	path := filepath.Join(dir, ".restic.yaml")
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("error while opening config %v: %v", path, err)
-	}
-	defer file.Close()
-
-	bytes, err := ioutil.ReadAll(file)
+	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading config %v: %v", path, err)
 	}
