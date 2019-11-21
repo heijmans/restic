@@ -1,0 +1,4 @@
+host: repo.heijmans.restic
+excludes:
+- workspace.xml
+- /restic
